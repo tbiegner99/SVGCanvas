@@ -1,0 +1,13 @@
+.gridBackground {
+  fill: white;
+}
+
+.majorGridline {
+  stroke: black;
+  stroke-width: .125;
+}
+
+.minorGridline {
+  stroke: #777;
+  stroke-width: .025;
+}
