@@ -14,7 +14,7 @@ export class CanvasDropTool implements CanvasTool<CanvasState> {
     this.dropObjectFactory = dropObjectFactory;
     this.setState = setState;
   }
-  getObjectTool(r: RenderableObject): Tool<any> | null {
+  getObjectTool(r: RenderableObject): Tool<any> {
     return new ObjectDropTool(r, (r?: RenderableObject) => (this.dropObject = r));
   }
   onClick(evt: MouseEvent, target: CanvasState) {
@@ -45,13 +45,6 @@ export class CanvasDropTool implements CanvasTool<CanvasState> {
     });
   }
 
-  onDragEnd(evt: DragEvent, dragState: DragState<CanvasState>) {}
-  onDrag(evt: DragEvent, dragState: DragState<CanvasState>) {
-    return dragState.target;
-  }
-  onDragStart(evt: MouseEvent, dragState: DragState<CanvasState>): CanvasState {
-    return dragState.target;
-  }
   canBeOverridden() {
     return false;
   }

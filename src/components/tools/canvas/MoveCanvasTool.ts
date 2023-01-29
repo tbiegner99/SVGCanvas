@@ -1,26 +1,22 @@
 import { CanvasState } from '../../CanvasState';
-import { DragState } from '../../../utils/DragState';
+import { DragState } from '../../../utils/SvgDraggable';
 import VectorUtils from '../../../utils/math/VectorUtils';
 import { CanvasTool, Tool } from '../Tool';
 import { MoveTool } from '../object/MoveTool';
+import { RenderableObject } from 'components/objects/RenderableObject';
 
 export class MoveCanvasTool implements CanvasTool<CanvasState> {
   constructor() {}
-  getObjectTool(r: any, canvasState: CanvasState): Tool<any> | null {
-    return new MoveTool(canvasState);
+  getObjectTool(r: RenderableObject, index: number | null): Tool<any> {
+    return new MoveTool(r, index);
   }
-  onDragEnd(evt: DragEvent, dragState: DragState<CanvasState>, onUpdateState: any) {}
-  onDrag(evt: DragEvent, dragState: DragState<CanvasState>, onUpdateState: any) {
-    const viewport = dragState.target.viewport;
+  onDrag(evt: DragEvent, canvasState: CanvasState, dragState: DragState, onUpdateState: any) {
+    const { viewport } = canvasState;
     const newViewport = viewport.movePixels(VectorUtils.scalarMultiply(dragState.delta, -1));
 
-    const newState = { ...dragState.target, viewport: newViewport };
+    const newState = { ...canvasState, viewport: newViewport };
 
     onUpdateState(newState);
-    return newState;
-  }
-  onDragStart(evt: MouseEvent, dragState: DragState<CanvasState>): CanvasState {
-    return dragState.target;
   }
   canBeOverridden() {
     return false;

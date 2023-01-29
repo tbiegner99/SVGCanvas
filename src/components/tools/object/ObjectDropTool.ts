@@ -14,13 +14,7 @@ export class ObjectDropTool implements Tool<HandlerState> {
   onClick() {
     this.onObjectDrop(this.object);
   }
-  onDragEnd(evt: DragEvent, dragState: DragState<HandlerState>) {}
-  onDrag(evt: DragEvent, dragState: DragState<HandlerState>, onUpdateState: any) {
-    return dragState.target;
-  }
-  onDragStart(evt: MouseEvent, dragState: DragState<HandlerState>): HandlerState {
-    return dragState.target;
-  }
+
   canBeOverridden() {
     return false;
   }

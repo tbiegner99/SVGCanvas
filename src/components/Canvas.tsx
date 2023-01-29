@@ -15,6 +15,7 @@ import { MoveCanvasTool } from './tools/canvas/MoveCanvasTool';
 import { CanvasDropTool } from './tools/canvas/CanvasDropTool';
 import { SelectedObjectNubs } from './elements/SelectedObjectNubs';
 import { CanvasStateContext } from './context/CanvasStateContext';
+import { CanvasDraggable } from '../utils/CanvasDraggable';
 
 var handlers =[
     new EscapeHandler()
@@ -41,11 +42,15 @@ export const Canvas = (props : any) => {
          currentTool:new MoveCanvasTool(),
          canvasSize:[0,0]
     }
-    const [state,setState] = useState(initState)
+    const [state,_setState] = useState(initState)
     const {zoom,viewport,objects,options} = state;
     const {locationInPixels,baseSize} = viewport
-    const [canvasDragState,setCanvasDragState]:[DragState<CanvasState> | null,any] = useState(null)
     const canvas=useRef(null);
+    const stateRef=useRef(state);
+    const setState = (s:CanvasState)=>{
+stateRef.current=s;
+_setState(s);
+    }
     useEffect(()=> {
         var rect = (canvas.current as any).getBoundingClientRect();
         var maxSize:Dimension=[rect.width,rect.height];
@@ -73,26 +78,29 @@ export const Canvas = (props : any) => {
     },[])
 
 
-    const renderObject = (r:RenderableObject,index?:number,renderOptions:{canUseTool?:boolean}={})=> {
+    const renderObject = (r:RenderableObject,index:number | null,renderOptions:{canUseTool?:boolean}={})=> {
         if(!viewport.contains(r.getBoundingRectangle())) {
             return null;
         }
         const {canUseTool=true}=renderOptions;
         const location=r.getLocation()
-        const handlerState={object:r,objectIndex:index,canvasState:state}; 
         const snapLocation=options.snap>0?VectorUtils.scalarOperation(location,(el)=>Math.floor(el/options.snap)*options.snap):location;
         const boundedLocation=VectorUtils.max([0,0],snapLocation)
-        const objectTool=canUseTool?state.currentTool?.getObjectTool(r,state):undefined;
-    return <svg style={{overflow:'visible', cursor:r.isMovable()?"pointer":"auto",pointerEvents:canUseTool?"all":"none"}} x={boundedLocation[0]} y={boundedLocation[1]} key={r.getId()} >{React.cloneElement(r.render(),objectTool?new DragHandler(objectTool,handlerState).getEvents(setState):{})}</svg>
+        const objectTool=canUseTool?state.currentTool.getObjectTool(r,index,state):undefined;
+    return <svg style={{overflow:'visible', cursor:r.isMovable()?"pointer":"auto",pointerEvents:canUseTool?"all":"none"}} x={boundedLocation[0]} y={boundedLocation[1]} key={r.getId()} >
+        <CanvasDraggable tool={objectTool}>
+            {r.render()}
+            </CanvasDraggable>
+        </svg>
 }
 const stateContext:CanvasStateContext = {
-    canvasState:state,setCanvasState:setState
+    canvasState:stateRef.current,setCanvasState:setState
 }
 
     return <CanvasStateContext.Provider value={stateContext}><svg {...new CanvasKeyListener(handlers,state,setState).events} tabIndex={0} ref={canvas} className={styles.canvas}>
-        <g   { ...new DragHandler(state.currentTool,state,canvasDragState,setCanvasDragState).getEvents(setState)} style={{
+        <CanvasDraggable tool={state.currentTool} style={{
             transform:`scale(${zoom}) translate(${-1*locationInPixels[0]}px, ${-1*locationInPixels[1]}px)`
-        }}   onWheel={(evt)=>{
+        }}   onWheel={(evt:any)=>{
             const newZoom = Math.max(1,evt.deltaY<0?zoom*1.1:zoom/1.1);
             setState({
                 ...state,
@@ -105,10 +113,10 @@ const stateContext:CanvasStateContext = {
             minorGridlines:4
         }} location={viewport.location} size={viewport.size}/>
         {objects.map((r,index)=>renderObject(r,index))}
-        {state.createObject && renderObject(state.createObject,undefined,{canUseTool:false})}
+        {state.createObject && renderObject(state.createObject,null,{canUseTool:false})}
         {typeof state.selectedObjectIndex ==="number" && <SelectedObjectNubs scale={viewport.scale} object={state.objects[state.selectedObjectIndex]} snap={options.snap}/> }
     </svg>
-    </g>
+    </CanvasDraggable>
     <svg x={20} y={state.canvasSize[1]-250}>
     <Legend  onCreateLegendObject={(option)=>{
        setState({...state,currentTool:new CanvasDropTool(option,setState)})

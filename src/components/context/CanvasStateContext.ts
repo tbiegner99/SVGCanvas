@@ -1,5 +1,5 @@
 import { CanvasState } from '../../components/CanvasState';
-import React from 'react';
+import React, { MutableRefObject } from 'react';
 
 export interface CanvasStateContext {
   canvasState?: CanvasState;

@@ -1,43 +1,36 @@
 import { Viewport } from '../../../models/Viewport';
 import VectorUtils from '../../../utils/math/VectorUtils';
-import { HandlerState, Tool } from '../Tool';
-import { DragState } from '../../../utils/DragState';
+import { Tool } from '../Tool';
+import { DragState } from '../../../utils/SvgDraggable';
 import { CanvasState } from '../../../components/CanvasState';
+import { RenderableObject } from 'components/objects/RenderableObject';
 
-export class MoveTool implements Tool<HandlerState> {
-  private canvasState: CanvasState;
-  constructor(canvasState: CanvasState) {
-    this.canvasState = canvasState;
-    console.log('CON', this.canvasState);
+export class MoveTool implements Tool<CanvasState> {
+  private object: RenderableObject;
+  private objectIndex: number | null;
+  constructor(object: RenderableObject, objectIndex: number | null) {
+    this.object = object;
+    this.objectIndex = objectIndex;
   }
-  onDragEnd(evt: DragEvent, dragState: DragState<HandlerState>) {
-    evt.stopImmediatePropagation();
-  }
-  onDrag(evt: DragEvent, dragState: DragState<HandlerState>, onUpdateState: any) {
-    if (!dragState.target.object.isMovable()) {
-      return dragState.target;
+  onDrag(evt: DragEvent, canvasState: CanvasState, dragState: DragState, onUpdateState: any) {
+    if (!this.object.isMovable()) {
+      return;
     }
-    var object = dragState.target.object;
-    var { viewport } = this.canvasState;
+    var object = this.object;
+    var { viewport } = canvasState;
     var movementUnits = VectorUtils.scalarOperation(dragState.delta, (item) =>
       Viewport.pixelsToUnits(item, viewport.scale)
     );
     object.move(movementUnits);
-    const newState = { ...this.canvasState };
-    console.log(this.canvasState);
+    const newState = { ...canvasState };
+    console.log(canvasState);
     onUpdateState(newState);
-    return { ...dragState.target, canvasState: newState };
   }
-  onDragStart(evt: MouseEvent, dragState: DragState<HandlerState>): HandlerState {
-    evt.stopPropagation();
-    return dragState.target;
-  }
-  onMouseDown(evt: MouseEvent, target: HandlerState, onUpdateState: any) {
-    if (target.objectIndex === undefined) {
+  onMouseDown(evt: MouseEvent, target: CanvasState, onUpdateState: any) {
+    if (this.objectIndex === null) {
       return;
     }
-    console.log(target.objectIndex);
-    onUpdateState({ ...this.canvasState, selectedObjectIndex: target.objectIndex });
+    onUpdateState({ ...target, selectedObjectIndex: this.objectIndex });
   }
   canBeOverridden() {
     return false;

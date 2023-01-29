@@ -1,5 +1,5 @@
 
-import React, {useState,useEffect} from "react"
+import React, {useState,useRef,useEffect} from "react"
 import { Point } from './math/Point';
 import { VectorUtils } from './MathFunctions';
 export interface DragState {
@@ -18,23 +18,35 @@ export interface DragEvents<T> {
   onMouseMove?:(evt:MouseEvent,state:T,onUpdateState:(newState:T)=>any)=>void;
   onMouseDown?:(evt:MouseEvent,state:T,onUpdateState:(newState:T)=>any)=>void;
   onClick?:(evt:MouseEvent,state:T,onUpdateState:(newState:T)=>any)=>void;
+
+}
+
+export interface DraggableProps<T> extends DragEvents<T> {
   state:T;
-  setState:(newState:T)=>any;
+  onUpdateState:(newState:T)=>any;
   [x:string]:any
 }
 
-export function SvgDraggable<T>(props:DragEvents<T>) {
-  const [dragState,setDragState] = useState<DragState|null>(null)
-
-  const onMouseMove = (evt:MouseEvent) =>{
+export function SvgDraggable<T>({
+  onDragEnd,onDrag,onMouseMove,onMouseDown,onDragStart,onDragLeave,onClick,state,onUpdateState:setState,...otherProps}:DraggableProps<T>) {
+  const [dragState,_setDragState] = useState<DragState | null>(null)
+  const stateRef= useRef(dragState)
+  const setDragState = (s:DragState | null)=>{
+    stateRef.current=s;
+    // console.log("UPDATING",s,stateRef)
+    _setDragState(s);
     
-    if(props.onMouseMove) {
-      props.onMouseMove(evt,props.state,props.setState)
-      }
-      console.log(dragState)
-    if(!dragState || !dragState.isDragging) {
+  }
+ 
+  const mouseMove = (evt:MouseEvent) =>{
+    let dragState = stateRef.current
+    if( !dragState || !dragState.isDragging) {
       return;
     }
+    if(onMouseMove) {
+      onMouseMove(evt,state,setState)
+      }
+
     var currentPoint:Point=[evt.clientX,evt.clientY]
     var delta=VectorUtils.subtract(currentPoint,dragState.end)
     const newDragState={
@@ -45,14 +57,19 @@ export function SvgDraggable<T>(props:DragEvents<T>) {
       isDragging:true,
       hasDragStarted:true
     };
+    stateRef.current=newDragState
     setDragState(newDragState)
-    if(props.onDrag) {
-    props.onDrag(evt,props.state,newDragState,props.setState);
+    console.log(stateRef.current)
+    if(onDrag) {
+    onDrag(evt,state,newDragState,setState);
     }
   
   }
-  const onMouseUp=(evt:MouseEvent)=> {
-    cancelDrag()
+  const mouseUp=(evt:MouseEvent)=> {
+    let dragState = stateRef.current
+    if( !dragState ||  !dragState.isDragging) {
+      return;
+    }
     const endDragState = {
       delta:[0,0] as Point,
       totalDelta:dragState!.totalDelta,
@@ -61,18 +78,18 @@ export function SvgDraggable<T>(props:DragEvents<T>) {
       isDragging:false,
       hasDragStarted:false
     }
-    if(props.onDragEnd) {
-      props.onDragEnd(evt,props.state,endDragState,props.setState)
+    setDragState(null)
+    if(onDragEnd) {
+      onDragEnd(evt,state,endDragState,setState)
     }
   }
 
-  const onMouseDown=(evt:MouseEvent) =>{
+  const mouseDown=(evt:MouseEvent) =>{
     evt.stopPropagation();
-    if(props.onMouseDown) {
-      props.onMouseDown(evt,props.state,props.setState)
+    if(onMouseDown) {
+      onMouseDown(evt,state,setState)
     }
-    window.addEventListener("mousemove", onMouseMove)
-    window.addEventListener("mouseup", onMouseUp)
+
     
     const newDragState = {
       isDragging:true,
@@ -82,26 +99,33 @@ export function SvgDraggable<T>(props:DragEvents<T>) {
       start:[evt.clientX,evt.clientY]  as Point,
       end:[evt.clientX,evt.clientY]  as Point,
     }
-    if(props.onDragStart) {
-      props.onDragStart(evt,props.state,newDragState,props.setState);
+    stateRef.current=newDragState;
+    console.log("MOUSE DOWN",newDragState,stateRef)
+    setDragState(newDragState)
+
+    if(onDragStart) {
+      onDragStart(evt,state,newDragState,setState);
     }
-    setDragState(dragState)
+
 
   }
-  const cancelDrag=() =>{
-    window.removeEventListener("mousemove",onMouseMove);
-   window.removeEventListener("mouseup",onMouseUp);
- }
-  const onClick = (evt:MouseEvent)=> {
-    if(props?.onClick) {
-      props.onClick(evt,props.state,props.setState)
+  useEffect(()=>{
+    window.addEventListener("mousemove", mouseMove)
+    window.addEventListener("mouseup", mouseUp)
+    return ()=>{
+      console.log("unmounting")
+      window.removeEventListener("mousemove",mouseMove);
+      window.removeEventListener("mouseup",mouseUp);
+    }
+  },[])
+  const click = (evt:MouseEvent)=> {
+    if(onClick) {
+      onClick(evt,state,setState)
       }
     
   }
   
-  return <g onClick={onClick as any} onMouseDown={onMouseDown as any}>
-
-  </g>
+  return <g onClick={click as any} onMouseDown={mouseDown as any} {...otherProps}></g>
  
 }
 
