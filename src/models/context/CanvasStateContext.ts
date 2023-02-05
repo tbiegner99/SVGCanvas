@@ -2,7 +2,7 @@ import { CanvasState } from '../../components/CanvasState';
 import React, { MutableRefObject } from 'react';
 
 export interface CanvasStateContext {
-  canvasState?: CanvasState;
+  canvasState?: MutableRefObject<CanvasState>;
   setCanvasState: (state: CanvasState) => any;
 }
 export const CanvasStateContext = React.createContext<CanvasStateContext>({

@@ -1,10 +1,13 @@
-import { RenderableObject, RenderableObjectFactory } from '../../objects/RenderableObject';
-import { CanvasState } from '../../CanvasState';
-import { DragState } from '../../../utils/DragState';
+import {
+  RenderableObject,
+  RenderableObjectFactory,
+} from '../../../components/objects/RenderableObject';
+import { CanvasState } from '../../../components/CanvasState';
 import VectorUtils from '../../../utils/math/VectorUtils';
-import { Viewport } from '../../../models/Viewport';
+import { Viewport } from '../../Viewport';
 import { ObjectDropTool } from '../object/ObjectDropTool';
 import { CanvasTool, Tool } from '../Tool';
+import { MoveCanvasTool } from './MoveCanvasTool';
 
 export class CanvasDropTool implements CanvasTool<CanvasState> {
   private setState: (state: any) => any;
@@ -18,7 +21,10 @@ export class CanvasDropTool implements CanvasTool<CanvasState> {
     return new ObjectDropTool(r, (r?: RenderableObject) => (this.dropObject = r));
   }
   onClick(evt: MouseEvent, target: CanvasState) {
-    if (!this.dropObjectFactory.canDropObjectOn(this.dropObject)) {
+    if (
+      !this.dropObjectFactory.canCreateObject() ||
+      !this.dropObjectFactory.canDropObjectOn(this.dropObject)
+    ) {
       this.dropObject = undefined;
       return;
     }
@@ -27,10 +33,15 @@ export class CanvasDropTool implements CanvasTool<CanvasState> {
       Viewport.pointFromPixels([evt.clientX, evt.clientY], target.viewport.scale),
       target.viewport.location
     );
-
+    this.dropObjectFactory.onObjectCreated(1);
+    var newTool = target.currentTool;
+    if (!this.dropObjectFactory.canCreateObject()) {
+      newTool = new MoveCanvasTool();
+    }
     this.setState({
       ...target,
       objects: [...target.objects, this.dropObjectFactory.getRenderObject(viewportLocation)],
+      currentTool: newTool,
     });
   }
 

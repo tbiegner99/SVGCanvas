@@ -1,7 +1,7 @@
-import { Viewport } from '../../../models/Viewport';
+import { Viewport } from '../../Viewport';
 import VectorUtils from '../../../utils/math/VectorUtils';
 import { Tool } from '../Tool';
-import { DragState } from '../../../utils/SvgDraggable';
+import { DragState } from '../../../components/elements/SvgDraggable';
 import { CanvasState } from '../../../components/CanvasState';
 import { RenderableObject } from 'components/objects/RenderableObject';
 
@@ -16,21 +16,30 @@ export class MoveTool implements Tool<CanvasState> {
     if (!this.object.isMovable()) {
       return;
     }
-    var object = this.object;
+    var objects = canvasState.selectedObjectIndicies.map((i) => canvasState.objects[i]);
     var { viewport } = canvasState;
     var movementUnits = VectorUtils.scalarOperation(dragState.delta, (item) =>
       Viewport.pixelsToUnits(item, viewport.scale)
     );
-    object.move(movementUnits);
+    objects.forEach((object) => {
+      object.move(movementUnits);
+    });
+
     const newState = { ...canvasState };
-    console.log(canvasState);
     onUpdateState(newState);
   }
   onMouseDown(evt: MouseEvent, target: CanvasState, onUpdateState: any) {
-    if (this.objectIndex === null) {
+    if (!this.object.isSelectable() || this.objectIndex === null) {
       return;
     }
-    onUpdateState({ ...target, selectedObjectIndex: this.objectIndex });
+    evt.stopPropagation();
+    let arr = [this.objectIndex];
+    if (evt.ctrlKey) {
+      const indicies = new Set(target.selectedObjectIndicies);
+      indicies.add(this.objectIndex);
+      arr = Array.from(indicies);
+    }
+    onUpdateState({ ...target, selectedObjectIndicies: arr });
   }
   canBeOverridden() {
     return false;

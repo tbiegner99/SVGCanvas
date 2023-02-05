@@ -1,6 +1,4 @@
-import { RenderableObject } from '../../objects/RenderableObject';
-
-import { DragState } from '../../../utils/DragState';
+import { RenderableObject } from '../../../components/objects/RenderableObject';
 
 import { HandlerState, Tool } from '../Tool';
 

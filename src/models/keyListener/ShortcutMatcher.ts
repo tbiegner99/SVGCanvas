@@ -20,7 +20,7 @@ export class ShortcutMatcher {
       if (k.toUpperCase() === 'SHIFT') {
         modifiers.shift = true;
       } else if (k.toUpperCase() === 'CTRL' || k.toUpperCase() === 'CONTROL') {
-        modifiers.alt = true;
+        modifiers.ctrl = true;
       } else if (k.toUpperCase() === 'META' || k.toUpperCase() === 'OS') {
         modifiers.meta = true;
       } else if (k.toUpperCase() === 'ALT') {

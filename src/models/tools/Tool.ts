@@ -1,6 +1,6 @@
-import { RenderableObject } from '../objects/RenderableObject';
-import { CanvasState } from '../CanvasState';
-import { DragEvents } from '../../utils/SvgDraggable';
+import { RenderableObject } from '../../components/objects/RenderableObject';
+import { CanvasState } from '../../components/CanvasState';
+import { DragEvents } from '../../components/elements/SvgDraggable';
 
 export interface Tool<T> extends DragEvents<T> {
   canBeOverridden(): boolean;
